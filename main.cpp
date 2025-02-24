@@ -1,8 +1,10 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 
-constexpr int WINDOW_WIDTH = 500;
-constexpr int WINDOW_HEIGHT = 500;
+constexpr int WINDOW_WIDTH = 750;
+constexpr int WINDOW_HEIGHT = 750;
+constexpr float OUTER_BLOCK_WIDTH = 40;
+constexpr float INNER_BLOCK_WIDTH = 32;
 
 SDL_Window* window = nullptr;
 SDL_Renderer* renderer = nullptr;
@@ -36,6 +38,17 @@ void shutdown() {
     SDL_Quit();
 }
 
+void draw_tetris_square(SDL_Renderer* renderer, float x, float y) { //TODO: arg for either place in the grid or coordinates on screen to render square
+    
+    SDL_FRect outline = {x, y, OUTER_BLOCK_WIDTH, OUTER_BLOCK_WIDTH}; // x, y, width, height
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); // white color
+    SDL_RenderFillRect(renderer, &outline);
+
+    SDL_FRect rect = {x + 4, y + 4, INNER_BLOCK_WIDTH, INNER_BLOCK_WIDTH}; // x, y, width, height
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Red color
+    SDL_RenderFillRect(renderer, &rect);
+}
+
 int main(int argc, char* args[]) {
     if (!initialize()) {
         return 1;
@@ -53,11 +66,11 @@ int main(int argc, char* args[]) {
 
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
-
-        //draw a square
-        SDL_FRect rect = {100, 100, 200, 200}; // x, y, width, height
-        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Red color
-        SDL_RenderFillRect(renderer, &rect);
+        
+        draw_tetris_square(renderer, 100, 100);        /*//draw a square*/
+        draw_tetris_square(renderer, 200, 200);        /*//draw a square*/
+        draw_tetris_square(renderer, 200, 100);        /*//draw a square*/
+        draw_tetris_square(renderer, 100, 200);        /*//draw a square*/
 
         // Update screen
         SDL_RenderPresent(renderer);
