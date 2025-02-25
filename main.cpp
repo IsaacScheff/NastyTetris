@@ -5,8 +5,8 @@
 
 constexpr int WINDOW_WIDTH = 750;
 constexpr int WINDOW_HEIGHT = 750;
-constexpr float OUTER_BLOCK_WIDTH = 40;
-constexpr float INNER_BLOCK_WIDTH = 32;
+constexpr float OUTER_BLOCK_WIDTH = 20;
+constexpr float INNER_BLOCK_WIDTH = 18;
 
 SDL_Window* window = nullptr;
 SDL_Renderer* renderer = nullptr;
@@ -66,9 +66,18 @@ void draw_tetris_square(SDL_Renderer* renderer, float x_cor, float y_cor, square
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); // white color
     SDL_RenderFillRect(renderer, &outline);
 
-    SDL_FRect rect = {x_cor + 4, y_cor + 4, INNER_BLOCK_WIDTH, INNER_BLOCK_WIDTH}; // x, y, width, height
+    SDL_FRect rect = {x_cor + 1, y_cor + 1, INNER_BLOCK_WIDTH, INNER_BLOCK_WIDTH}; // x, y, width, height
     SDL_SetRenderDrawColor(renderer, rgbFirst, rgbSecond, rgbThird, 255);
     SDL_RenderFillRect(renderer, &rect);
+}
+
+void draw_tetris_grid(SDL_Renderer* renderer) {
+    for(int i = 0; i < 11; i++) { //vertical lines
+        SDL_RenderLine(renderer, 200 + (20 * i), 350, 200 + (20 * i), 750);
+    }
+    for(int i = 0; i < 21; i++) { //horizontal lines
+        SDL_RenderLine(renderer, 200, 350 + (20 * i), 400, 350 + (20 * i));
+    }
 }
 
 int main(int argc, char* args[]) {
@@ -90,10 +99,11 @@ int main(int argc, char* args[]) {
         SDL_RenderClear(renderer);
         
         draw_tetris_square(renderer, 100, 100, RED);
-        draw_tetris_square(renderer, 200, 200, BLUE);       
-        draw_tetris_square(renderer, 200, 100, GREEN);        
-        draw_tetris_square(renderer, 100, 200, PURPLE);        
-
+        draw_tetris_square(renderer, 120, 120, BLUE);       
+        draw_tetris_square(renderer, 120, 100, GREEN);        
+        draw_tetris_square(renderer, 100, 120, PURPLE);        
+        
+        draw_tetris_grid(renderer);
         // Update screen
         SDL_RenderPresent(renderer);
         SDL_UpdateWindowSurface(window);
