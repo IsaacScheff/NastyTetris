@@ -12,7 +12,6 @@ constexpr float INNER_BLOCK_WIDTH = 18;
 constexpr float GRID_X = 110;
 constexpr float GRID_Y = 350; 
 
-
 SDL_Window* window = nullptr;
 SDL_Renderer* renderer = nullptr;
 
@@ -23,7 +22,7 @@ enum squareColor  {
     YELLOW,
     PURPLE,
     ORANGE,
-    BLANK //or can I just use NULL in the tetris_array?
+    BLANK
 };
 
 std::map<squareColor, std::tuple<int, int, int>> colorToRGB = {
@@ -36,6 +35,7 @@ std::map<squareColor, std::tuple<int, int, int>> colorToRGB = {
 };
 
 squareColor board_state[20][10]; //each element will be a color and this array will be used to render the squares to the screen
+
 int piece_starting_coordinates[7][4][2] = { //seven types of pieces, four squares per piece, 2 coordiantes(x and y) each
     {{4, 0},{5, 0},{4, 1},{5, 1},},
     {{4, 0},{5, 0},{6, 0},{7, 0},},
@@ -45,7 +45,9 @@ int piece_starting_coordinates[7][4][2] = { //seven types of pieces, four square
     {{4, 0},{5, 0},{6, 0},{6, 1},},
     {{4, 0},{5, 0},{6, 0},{5, 1},},
 };
+
 int active_coordinates[4][2]; //the four places in the grid that the current active piece occupy
+
 bool is_not_active_coord(int x, int y) {
     for(int i = 0; i < 4; i++) {
         if(active_coordinates[i][0] == x && active_coordinates[i][1] == y) {
@@ -54,6 +56,7 @@ bool is_not_active_coord(int x, int y) {
     }
     return true;
 }
+
 bool can_active_move_down() { // also need to account for already being on bottom row
     for(int i = 0; i < 4; i++) {
         int newX = active_coordinates[i][0] + 1;
@@ -64,6 +67,55 @@ bool can_active_move_down() { // also need to account for already being on botto
     }
     return true;
 }
+
+void draw_tetris_square(SDL_Renderer* renderer, float x_cor, float y_cor, squareColor sColor) { //TODO: arg for either place in the grid or coordinates on screen to render square
+    int rgbFirst = std::get<0>(colorToRGB[sColor]);
+    int rgbSecond = std::get<1>(colorToRGB[sColor]);
+    int rgbThird = std::get<2>(colorToRGB[sColor]);
+    SDL_FRect outline = {x_cor, y_cor, OUTER_BLOCK_WIDTH, OUTER_BLOCK_WIDTH}; // x, y, width, height
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); // white color
+    SDL_RenderFillRect(renderer, &outline);
+
+    SDL_FRect rect = {x_cor + 1, y_cor + 1, INNER_BLOCK_WIDTH, INNER_BLOCK_WIDTH}; // x, y, width, height
+    SDL_SetRenderDrawColor(renderer, rgbFirst, rgbSecond, rgbThird, 255);
+    SDL_RenderFillRect(renderer, &rect);
+}
+
+void draw_tetroid(SDL_Renderer* renderer, int coords[4][2], squareColor color) {
+    for(int i = 0; i < 4; i++) {
+        draw_tetris_square(renderer, GRID_X + (coords[i][0] * OUTER_BLOCK_WIDTH), GRID_Y + (coords[i][1] * OUTER_BLOCK_WIDTH), color);
+    }
+}
+
+void draw_tetris_grid(SDL_Renderer* renderer) { //wait, will this actually be used if we're just rendering squares based on boad_state??? 
+    for(int i = 0; i < 11; i++) { //vertical lines
+        SDL_RenderLine(renderer, GRID_X + (OUTER_BLOCK_WIDTH * i), GRID_Y, GRID_X + (OUTER_BLOCK_WIDTH * i), WINDOW_HEIGHT);
+    }
+    for(int i = 0; i < 21; i++) { //horizontal lines
+        SDL_RenderLine(renderer, GRID_X, GRID_Y + (OUTER_BLOCK_WIDTH * i), 310, GRID_Y + (OUTER_BLOCK_WIDTH * i)); //310 is grid_x + (OUTER_BLOCK_WIDTH * number of rows(20))
+    }
+}
+
+void move_tetroid_down() {
+    if(can_active_move_down()) {
+        for(int i = 0; i < 4; i++) {
+            active_coordinates[i][1]++;
+        }
+    } else {
+        std::cout << "Tetroid can't move down";
+    }
+}
+
+void draw_from_board_state(SDL_Renderer* renderer) {
+    for(int i = 0; i < 20; i++) {
+        for(int j = 0; j < 10; j++) {
+            if(board_state[i][j] != BLANK) {
+                draw_tetris_square(renderer, GRID_X + (j * OUTER_BLOCK_WIDTH), GRID_Y + (i * OUTER_BLOCK_WIDTH), board_state[i][j]);
+            }
+        }
+    }
+}
+
 bool initialize() {
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         SDL_Log("SDL init failed: %s", SDL_GetError());
@@ -93,43 +145,6 @@ void shutdown() {
     SDL_Quit();
 }
 
-void draw_tetris_square(SDL_Renderer* renderer, float x_cor, float y_cor, squareColor sColor) { //TODO: arg for either place in the grid or coordinates on screen to render square
-    int rgbFirst = std::get<0>(colorToRGB[sColor]);
-    int rgbSecond = std::get<1>(colorToRGB[sColor]);
-    int rgbThird = std::get<2>(colorToRGB[sColor]);
-    SDL_FRect outline = {x_cor, y_cor, OUTER_BLOCK_WIDTH, OUTER_BLOCK_WIDTH}; // x, y, width, height
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255); // white color
-    SDL_RenderFillRect(renderer, &outline);
-
-    SDL_FRect rect = {x_cor + 1, y_cor + 1, INNER_BLOCK_WIDTH, INNER_BLOCK_WIDTH}; // x, y, width, height
-    SDL_SetRenderDrawColor(renderer, rgbFirst, rgbSecond, rgbThird, 255);
-    SDL_RenderFillRect(renderer, &rect);
-}
-void draw_tetroid(SDL_Renderer* renderer, int coords[4][2], squareColor color) {
-    for(int i = 0; i < 4; i++) {
-        draw_tetris_square(renderer, GRID_X + (coords[i][0] * OUTER_BLOCK_WIDTH), GRID_Y + (coords[i][1] * OUTER_BLOCK_WIDTH), color);
-    }
-}
-void draw_tetris_grid(SDL_Renderer* renderer) { //wait, will this actually be used if we're just rendering squares based on boad_state??? 
-    for(int i = 0; i < 11; i++) { //vertical lines
-        SDL_RenderLine(renderer, GRID_X + (OUTER_BLOCK_WIDTH * i), GRID_Y, GRID_X + (OUTER_BLOCK_WIDTH * i), WINDOW_HEIGHT);
-    }
-    for(int i = 0; i < 21; i++) { //horizontal lines
-        SDL_RenderLine(renderer, GRID_X, GRID_Y + (OUTER_BLOCK_WIDTH * i), 310, GRID_Y + (OUTER_BLOCK_WIDTH * i)); //310 is grid_x + (OUTER_BLOCK_WIDTH * number of rows(20))
-    }
-}
-void place_tetroid() {
-       
-}
-void draw_from_board_state(SDL_Renderer* renderer) {
-    for(int i = 0; i < 20; i++) {
-        for(int j = 0; j < 10; j++) {
-            if(board_state[i][j] != BLANK) {
-                draw_tetris_square(renderer, GRID_X + (j * OUTER_BLOCK_WIDTH), GRID_Y + (i * OUTER_BLOCK_WIDTH), board_state[i][j]);
-            }
-        }
-    }
-}
 int main(int argc, char* args[]) {
     if (!initialize()) {
         return 1;
