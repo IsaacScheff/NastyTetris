@@ -2,6 +2,8 @@
 #include <SDL3/SDL_main.h>
 #include <map>
 #include <tuple>
+#include <algorithm>
+#include <iostream>
 
 constexpr int WINDOW_WIDTH = 422;
 constexpr int WINDOW_HEIGHT = 750;
@@ -39,11 +41,29 @@ int piece_starting_coordinates[7][4][2] = { //seven types of pieces, four square
     {{4, 0},{5, 0},{6, 0},{7, 0},},
     {{4, 1},{5, 1},{5, 0},{6, 0},},
     {{4, 0},{5, 0},{5, 1},{6, 1},},
-    {{4, 1},{5, 1},{6, 0},{4, 1},},
-    {{4, 1},{5, 1},{6, 0},{6, 1},},
-    {{4, 1},{5, 1},{6, 0},{5, 1},},
+    {{4, 0},{5, 0},{6, 0},{4, 1},},
+    {{4, 0},{5, 0},{6, 0},{6, 1},},
+    {{4, 0},{5, 0},{6, 0},{5, 1},},
 };
 int active_coordinates[4][2]; //the four places in the grid that the current active piece occupy
+bool is_not_active_coord(int x, int y) {
+    for(int i = 0; i < 4; i++) {
+        if(active_coordinates[i][0] == x && active_coordinates[i][1] == y) {
+            return false;
+        }
+    }
+    return true;
+}
+bool can_active_move_down() { // also need to account for already being on bottom row
+    for(int i = 0; i < 4; i++) {
+        int newX = active_coordinates[i][0] + 1;
+        int newY = active_coordinates[i][1] + 1;
+        if(board_state[newX][newY] != BLANK && is_not_active_coord(newX, newY)){
+            return false;
+        }
+    }
+    return true;
+}
 bool initialize() {
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         SDL_Log("SDL init failed: %s", SDL_GetError());
@@ -90,7 +110,7 @@ void draw_tetroid(SDL_Renderer* renderer, int coords[4][2], squareColor color) {
         draw_tetris_square(renderer, GRID_X + (coords[i][0] * OUTER_BLOCK_WIDTH), GRID_Y + (coords[i][1] * OUTER_BLOCK_WIDTH), color);
     }
 }
-void draw_tetris_grid(SDL_Renderer* renderer) {
+void draw_tetris_grid(SDL_Renderer* renderer) { //wait, will this actually be used if we're just rendering squares based on boad_state??? 
     for(int i = 0; i < 11; i++) { //vertical lines
         SDL_RenderLine(renderer, GRID_X + (OUTER_BLOCK_WIDTH * i), GRID_Y, GRID_X + (OUTER_BLOCK_WIDTH * i), WINDOW_HEIGHT);
     }
@@ -98,7 +118,18 @@ void draw_tetris_grid(SDL_Renderer* renderer) {
         SDL_RenderLine(renderer, GRID_X, GRID_Y + (OUTER_BLOCK_WIDTH * i), 310, GRID_Y + (OUTER_BLOCK_WIDTH * i)); //310 is grid_x + (OUTER_BLOCK_WIDTH * number of rows(20))
     }
 }
-
+void place_tetroid() {
+       
+}
+void draw_from_board_state(SDL_Renderer* renderer) {
+    for(int i = 0; i < 20; i++) {
+        for(int j = 0; j < 10; j++) {
+            if(board_state[i][j] != BLANK) {
+                draw_tetris_square(renderer, GRID_X + (j * OUTER_BLOCK_WIDTH), GRID_Y + (i * OUTER_BLOCK_WIDTH), board_state[i][j]);
+            }
+        }
+    }
+}
 int main(int argc, char* args[]) {
     if (!initialize()) {
         return 1;
@@ -106,6 +137,11 @@ int main(int argc, char* args[]) {
 
     bool running = true;
     SDL_Event event;
+    
+    
+    for (int i = 0; i < 20; i++) {
+        std::fill_n(board_state[i], 10, BLANK);
+    }
 
     while (running) {
         while (SDL_PollEvent(&event)) {
@@ -113,11 +149,13 @@ int main(int argc, char* args[]) {
                 running = false;
             }
         }
-
+        
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer); 
        
-        draw_tetroid(renderer, piece_starting_coordinates[0], BLUE);
+        /*draw_tetroid(renderer, piece_starting_coordinates[3], BLUE);*/
+        board_state[5][6] = RED;
+        draw_from_board_state(renderer);
         draw_tetris_grid(renderer);
         // Update screen
         SDL_RenderPresent(renderer);
