@@ -11,6 +11,10 @@ constexpr float OUTER_BLOCK_WIDTH = 20;
 constexpr float INNER_BLOCK_WIDTH = 18;
 constexpr float GRID_X = 110;
 constexpr float GRID_Y = 350; 
+constexpr int STEP_RATE_IN_MILLISECONDS = 500;
+
+Uint32 lastTime = SDL_GetTicks();      
+Uint32 accumulator = 0;
 
 SDL_Window* window = nullptr;
 SDL_Renderer* renderer = nullptr;
@@ -106,15 +110,15 @@ void draw_tetris_grid(SDL_Renderer* renderer) {
     }
 }
 
-void move_tetroid_down() {
-    if(can_active_move_down()) {
-        for(int i = 0; i < 4; i++) {
-            active_coordinates[i][1]++;
-        }
-    } else {
-        std::cout << "Tetroid can't move down";
-    }
-}
+/*void move_tetroid_down() {*/
+/*    if(can_active_move_down()) {*/
+/*        for(int i = 0; i < 4; i++) {*/
+/*            active_coordinates[i][1]++; */
+/*        }*/
+/*    } else {*/
+/*        std::cout << "Tetroid can't move down";*/
+/*    }*/
+/*}*/
 
 void draw_from_board_state(SDL_Renderer* renderer) {
     for(int i = 0; i < 10; i++) {
@@ -161,41 +165,45 @@ int main(int argc, char* args[]) {
     }
 
     bool running = true;
-    SDL_Event event;
-    
-    
+    SDL_Event event;    
+
     for (int i = 0; i < 10; i++) {
         std::fill_n(board_state[i], 20, BLANK);
     }
-    
-    bool once_FOR_testing = false; 
+
+    active_coordinates[0][0] =  4;       
+    active_coordinates[0][1] =  0;       
+    active_coordinates[1][0] =  5;       
+    active_coordinates[1][1] =  0;       
+    active_coordinates[2][0] =  5;       
+    active_coordinates[2][1] =  1;       
+    active_coordinates[3][0] =  6;       
+    active_coordinates[3][1] =  1;       
     while (running) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_EVENT_QUIT) {
                 running = false;
             }
         }
+
+        Uint32 currentTime = SDL_GetTicks(); // Current time in milliseconds
+        Uint32 deltaTime = currentTime - lastTime; // Time since last frame
+        lastTime = currentTime; // Update lastTime for the next frame
+        accumulator += deltaTime; // Add delta time to the accumulator    
         
+        if(accumulator >= STEP_RATE_IN_MILLISECONDS) {
+            move_active_down();
+            accumulator -= STEP_RATE_IN_MILLISECONDS; 
+            std::cout << "tried to move down";
+        } 
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer); 
-       
-        /*draw_tetroid(renderer, piece_starting_coordinates[3], BLUE);*/
-        active_coordinates[0][0] =  4;       
-        active_coordinates[0][1] =  0;       
-        active_coordinates[1][0] =  5;       
-        active_coordinates[1][1] =  0;       
-        active_coordinates[2][0] =  5;       
-        active_coordinates[2][1] =  1;       
-        active_coordinates[3][0] =  6;       
-        active_coordinates[3][1] =  1;       
 
-        if(once_FOR_testing == false) {
-            active_color = BLUE;
-            move_active_down();
-            once_FOR_testing = true;
-        }
+
         draw_from_board_state(renderer);
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         draw_tetris_grid(renderer);
+
         // Update screen
         SDL_RenderPresent(renderer);
         SDL_UpdateWindowSurface(window);
