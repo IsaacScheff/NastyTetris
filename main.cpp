@@ -34,7 +34,7 @@ std::map<squareColor, std::tuple<int, int, int>> colorToRGB = {
     {ORANGE, {250, 156, 28}}
 };
 
-squareColor board_state[20][10]; //each element will be a color and this array will be used to render the squares to the screen
+squareColor board_state[10][20]; //each element will be a color and this array will be used to render the squares to the screen
 
 int piece_starting_coordinates[7][4][2] = { //seven types of pieces, four squares per piece, 2 coordiantes(x and y) each
     {{4, 0},{5, 0},{4, 1},{5, 1},},
@@ -47,7 +47,7 @@ int piece_starting_coordinates[7][4][2] = { //seven types of pieces, four square
 };
 
 int active_coordinates[4][2]; //the four places in the grid that the current active piece occupy
-
+squareColor active_color;
 bool is_not_active_coord(int x, int y) {
     for(int i = 0; i < 4; i++) {
         if(active_coordinates[i][0] == x && active_coordinates[i][1] == y) {
@@ -59,13 +59,23 @@ bool is_not_active_coord(int x, int y) {
 
 bool can_active_move_down() { // also need to account for already being on bottom row
     for(int i = 0; i < 4; i++) {
-        int newX = active_coordinates[i][0] + 1;
+        int current_X = active_coordinates[i][0];
         int newY = active_coordinates[i][1] + 1;
-        if(board_state[newX][newY] != BLANK && is_not_active_coord(newX, newY)){
+        if(board_state[current_X][newY] != BLANK && is_not_active_coord(current_X, newY)){
             return false;
         }
     }
     return true;
+}
+
+void move_active_down() {
+    for(int i = 0; i < 4; i++) {
+        board_state[active_coordinates[i][0]][active_coordinates[i][1]] = BLANK;
+        active_coordinates[i][1]++;
+    }
+    for(int i = 0; i < 4; i++) {
+        board_state[active_coordinates[i][0]][active_coordinates[i][1]] = active_color;
+    }
 }
 
 void draw_tetris_square(SDL_Renderer* renderer, float x_cor, float y_cor, squareColor sColor) { //TODO: arg for either place in the grid or coordinates on screen to render square
@@ -81,13 +91,13 @@ void draw_tetris_square(SDL_Renderer* renderer, float x_cor, float y_cor, square
     SDL_RenderFillRect(renderer, &rect);
 }
 
-void draw_tetroid(SDL_Renderer* renderer, int coords[4][2], squareColor color) {
+void draw_tetroid(SDL_Renderer* renderer, int coords[4][2], squareColor color) {//wait, will this actually be used if we're just rendering squares based on boad_state??? 
     for(int i = 0; i < 4; i++) {
         draw_tetris_square(renderer, GRID_X + (coords[i][0] * OUTER_BLOCK_WIDTH), GRID_Y + (coords[i][1] * OUTER_BLOCK_WIDTH), color);
     }
 }
 
-void draw_tetris_grid(SDL_Renderer* renderer) { //wait, will this actually be used if we're just rendering squares based on boad_state??? 
+void draw_tetris_grid(SDL_Renderer* renderer) { 
     for(int i = 0; i < 11; i++) { //vertical lines
         SDL_RenderLine(renderer, GRID_X + (OUTER_BLOCK_WIDTH * i), GRID_Y, GRID_X + (OUTER_BLOCK_WIDTH * i), WINDOW_HEIGHT);
     }
@@ -107,10 +117,10 @@ void move_tetroid_down() {
 }
 
 void draw_from_board_state(SDL_Renderer* renderer) {
-    for(int i = 0; i < 20; i++) {
-        for(int j = 0; j < 10; j++) {
+    for(int i = 0; i < 10; i++) {
+        for(int j = 0; j < 20; j++) {
             if(board_state[i][j] != BLANK) {
-                draw_tetris_square(renderer, GRID_X + (j * OUTER_BLOCK_WIDTH), GRID_Y + (i * OUTER_BLOCK_WIDTH), board_state[i][j]);
+                draw_tetris_square(renderer, GRID_X + (i * OUTER_BLOCK_WIDTH), GRID_Y + (j * OUTER_BLOCK_WIDTH), board_state[i][j]);
             }
         }
     }
@@ -154,10 +164,11 @@ int main(int argc, char* args[]) {
     SDL_Event event;
     
     
-    for (int i = 0; i < 20; i++) {
-        std::fill_n(board_state[i], 10, BLANK);
+    for (int i = 0; i < 10; i++) {
+        std::fill_n(board_state[i], 20, BLANK);
     }
-
+    
+    bool once_FOR_testing = false; 
     while (running) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_EVENT_QUIT) {
@@ -169,7 +180,20 @@ int main(int argc, char* args[]) {
         SDL_RenderClear(renderer); 
        
         /*draw_tetroid(renderer, piece_starting_coordinates[3], BLUE);*/
-        board_state[5][6] = RED;
+        active_coordinates[0][0] =  4;       
+        active_coordinates[0][1] =  0;       
+        active_coordinates[1][0] =  5;       
+        active_coordinates[1][1] =  0;       
+        active_coordinates[2][0] =  5;       
+        active_coordinates[2][1] =  1;       
+        active_coordinates[3][0] =  6;       
+        active_coordinates[3][1] =  1;       
+
+        if(once_FOR_testing == false) {
+            active_color = BLUE;
+            move_active_down();
+            once_FOR_testing = true;
+        }
         draw_from_board_state(renderer);
         draw_tetris_grid(renderer);
         // Update screen
