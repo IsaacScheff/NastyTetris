@@ -1,6 +1,7 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 #include <map>
+#include <ostream>
 #include <tuple>
 #include <algorithm>
 #include <iostream>
@@ -29,7 +30,10 @@ enum squareColor  {
     CYAN,
     BLANK
 };
-
+enum directionInput {
+    LEFT,
+    RIGHT
+};
 std::map<squareColor, std::tuple<int, int, int>> colorToRGB = {
     {RED, {255, 0, 0}},
     {GREEN, {0, 255, 0}},
@@ -67,8 +71,8 @@ bool is_not_active_coord(int x, int y) {
 bool can_active_move_down() { // also need to account for already being on bottom row
     for(int i = 0; i < 4; i++) {
         int current_X = active_coordinates[i][0];
-        int newY = active_coordinates[i][1] + 1;
-        if((board_state[current_X][newY] != BLANK && is_not_active_coord(current_X, newY)) || newY >= 20){
+        int new_Y = active_coordinates[i][1] + 1;
+        if((board_state[current_X][new_Y] != BLANK && is_not_active_coord(current_X, new_Y)) || new_Y >= 20){
             return false;
         }
     }
@@ -126,6 +130,21 @@ void draw_from_board_state(SDL_Renderer* renderer) {
 void spawn_new_piece() {
     //need to randomly pick 1 - 7 (excluding previous piece)
     //then draw piece and set active squares
+}
+
+bool can_active_move_horizontal(directionInput direction) {
+    int direction_adjustment = (direction == RIGHT ? 1 : 0); //moving right adds to Y value, left subtracts from it
+    for(int i = 0; i < 4; i++) {
+        int current_Y = active_coordinates[i][1];
+        int new_X = active_coordinates[i][0] + direction_adjustment;
+        if((board_state[new_X][current_Y] != BLANK && is_not_active_coord(new_X, current_Y)) || new_X >= 11 || new_X <= -1){
+            return false;
+        }
+    }
+    return true;
+}
+
+void slide_active_piece(directionInput direction) {
 }
 
 bool initialize() {
@@ -191,6 +210,11 @@ int main(int argc, char* args[]) {
                     switch (event.key.scancode) {
                         case SDL_SCANCODE_RIGHT:
                             std::cout << "Right arrow key pressed!" << std::endl;
+                            if(can_active_move_horizontal(RIGHT)) {
+                                std::cout << "YES!" << std::endl;
+                            }else {
+                                std::cout << "No!" << std::endl;
+                            }
                             break;
                         case SDL_SCANCODE_UP:
                             std::cout << "Up arrow key pressed!" << std::endl;
