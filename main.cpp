@@ -133,7 +133,7 @@ void spawn_new_piece() {
 }
 
 bool can_active_move_horizontal(directionInput direction) {
-    int direction_adjustment = (direction == RIGHT ? 1 : 0); //moving right adds to Y value, left subtracts from it
+    int direction_adjustment = (direction == RIGHT ? 1 : -1); //moving right adds to Y value, left subtracts from it
     for(int i = 0; i < 4; i++) {
         int current_Y = active_coordinates[i][1];
         int new_X = active_coordinates[i][0] + direction_adjustment;
@@ -144,7 +144,15 @@ bool can_active_move_horizontal(directionInput direction) {
     return true;
 }
 
-void slide_active_piece(directionInput direction) {
+void move_active_piece_horizontal(directionInput direction) {
+    int move_direction = (direction == RIGHT ? 1 : -1); //moving right adds to Y value, left subtracts from it
+    for(int i = 0; i < 4; i++) {
+        board_state[active_coordinates[i][0]][active_coordinates[i][1]] = BLANK;
+        active_coordinates[i][0] += move_direction;
+    }
+    for(int i = 0; i < 4; i++) {
+        board_state[active_coordinates[i][0]][active_coordinates[i][1]] = active_color;
+    }
 }
 
 bool initialize() {
@@ -212,8 +220,9 @@ int main(int argc, char* args[]) {
                             std::cout << "Right arrow key pressed!" << std::endl;
                             if(can_active_move_horizontal(RIGHT)) {
                                 std::cout << "YES!" << std::endl;
+                                move_active_piece_horizontal(RIGHT);
                             }else {
-                                std::cout << "No!" << std::endl;
+                                std::cout << "No, cannot move right!" << std::endl;
                             }
                             break;
                         case SDL_SCANCODE_UP:
@@ -221,6 +230,12 @@ int main(int argc, char* args[]) {
                             break;
                         case SDL_SCANCODE_LEFT:
                             std::cout << "Left arrow key pressed!" << std::endl;
+                            if(can_active_move_horizontal(LEFT)) {
+                                std::cout << "YES!" << std::endl;
+                                move_active_piece_horizontal(LEFT);
+                            }else {
+                                std::cout << "No, cannot move left!" << std::endl;
+                            }
                             break;
                         case SDL_SCANCODE_DOWN:
                             std::cout << "Down arrow key pressed!" << std::endl;
