@@ -14,7 +14,7 @@ constexpr float OUTER_BLOCK_WIDTH = 20;
 constexpr float INNER_BLOCK_WIDTH = 18;
 constexpr float GRID_X = 110;
 constexpr float GRID_Y = 350; 
-constexpr int STEP_RATE_IN_MILLISECONDS = 500;
+constexpr int STEP_RATE_IN_MILLISECONDS = 200;
 constexpr int MAX_RND_NUM = 6; //for generating a number to choose next piece
 
 Uint32 lastTime = SDL_GetTicks();      
@@ -131,8 +131,6 @@ void draw_from_board_state(SDL_Renderer* renderer) {
 }
 
 void spawn_new_piece(int randomNumber) {
-    //need to randomly pick 1 - 7 (excluding previous piece)
-    //then draw piece and set active squares
     active_color = squareColor(randomNumber);
     for(int i = 0; i < 4; i++) {
         active_coordinates[i][0] = piece_starting_coordinates[randomNumber][i][0]; 
@@ -160,6 +158,33 @@ void move_active_piece_horizontal(directionInput direction) {
     }
     for(int i = 0; i < 4; i++) {
         board_state[active_coordinates[i][0]][active_coordinates[i][1]] = active_color;
+    }
+}
+
+void delete_full_row(int row) {
+    for (int i = 0; i < 10; i++) {
+        board_state[i][row] = BLANK;
+    }
+    for (int y = row; y > 0; y--) {
+        for(int x = 0; x < 10; x++) {
+            board_state[x][y] = board_state[x][y - 1];
+        }
+    }
+    for(int i = 0; i < 10; i++) { //top row will always be blank after a deletion
+        board_state[i][0] = BLANK;
+    }
+}
+
+void check_full_rows() {
+    for (int y = 0; y < 20; y++) {
+        for (int x = 0; x < 10; x++) {
+            if(board_state[x][y] == BLANK) {
+                break;
+            } else if (x == 9) {
+                std::cout << "Delete this row!" << std::flush;
+                delete_full_row(y);
+            }
+        }
     }
 }
 
@@ -261,6 +286,8 @@ int main(int argc, char* args[]) {
             if(can_active_move_down()) {
                 move_active_down();
             } else {
+                //check for deletion
+                check_full_rows();
                 spawn_new_piece(distrib(gen));
             }
             accumulator -= STEP_RATE_IN_MILLISECONDS; 
