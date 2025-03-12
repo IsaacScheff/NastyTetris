@@ -1,10 +1,12 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
+#include <ctime>
 #include <map>
 #include <ostream>
 #include <tuple>
 #include <algorithm>
 #include <iostream>
+#include <random>
 
 constexpr int WINDOW_WIDTH = 422;
 constexpr int WINDOW_HEIGHT = 750;
@@ -13,6 +15,7 @@ constexpr float INNER_BLOCK_WIDTH = 18;
 constexpr float GRID_X = 110;
 constexpr float GRID_Y = 350; 
 constexpr int STEP_RATE_IN_MILLISECONDS = 500;
+constexpr int MAX_RND_NUM = 6; //for generating a number to choose next piece
 
 Uint32 lastTime = SDL_GetTicks();      
 Uint32 accumulator = 0;
@@ -127,9 +130,13 @@ void draw_from_board_state(SDL_Renderer* renderer) {
     }
 }
 
-void spawn_new_piece() {
+void spawn_new_piece(int randomNumber) {
     //need to randomly pick 1 - 7 (excluding previous piece)
     //then draw piece and set active squares
+    for(int i = 0; i < 4; i++) {
+        active_coordinates[i][0] = piece_starting_coordinates[randomNumber][i][0]; 
+        active_coordinates[i][1] = piece_starting_coordinates[randomNumber][i][1]; 
+    }
 }
 
 bool can_active_move_horizontal(directionInput direction) {
@@ -188,6 +195,10 @@ int main(int argc, char* args[]) {
     if (!initialize()) {
         return 1;
     }
+    
+    //setting up RNG
+    std::mt19937 gen(time(0));
+    std::uniform_int_distribution<> distrib(0, MAX_RND_NUM);
 
     bool running = true;
     SDL_Event event;    
@@ -217,9 +228,7 @@ int main(int argc, char* args[]) {
                     // Check which arrow key was pressed
                     switch (event.key.scancode) {
                         case SDL_SCANCODE_RIGHT:
-                            std::cout << "Right arrow key pressed!" << std::endl;
                             if(can_active_move_horizontal(RIGHT)) {
-                                std::cout << "YES!" << std::endl;
                                 move_active_piece_horizontal(RIGHT);
                             }else {
                                 std::cout << "No, cannot move right!" << std::endl;
@@ -229,9 +238,7 @@ int main(int argc, char* args[]) {
                             std::cout << "Up arrow key pressed!" << std::endl;
                             break;
                         case SDL_SCANCODE_LEFT:
-                            std::cout << "Left arrow key pressed!" << std::endl;
                             if(can_active_move_horizontal(LEFT)) {
-                                std::cout << "YES!" << std::endl;
                                 move_active_piece_horizontal(LEFT);
                             }else {
                                 std::cout << "No, cannot move left!" << std::endl;
@@ -260,6 +267,8 @@ int main(int argc, char* args[]) {
         if(accumulator >= STEP_RATE_IN_MILLISECONDS) {
             if(can_active_move_down()) {
                 move_active_down();
+            } else {
+                spawn_new_piece(distrib(gen));
             }
             accumulator -= STEP_RATE_IN_MILLISECONDS; 
         } 
