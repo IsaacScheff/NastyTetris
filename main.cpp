@@ -133,6 +133,7 @@ void draw_from_board_state(SDL_Renderer* renderer) {
 void spawn_new_piece(int randomNumber) {
     //need to randomly pick 1 - 7 (excluding previous piece)
     //then draw piece and set active squares
+    active_color = squareColor(randomNumber);
     for(int i = 0; i < 4; i++) {
         active_coordinates[i][0] = piece_starting_coordinates[randomNumber][i][0]; 
         active_coordinates[i][1] = piece_starting_coordinates[randomNumber][i][1]; 
@@ -207,15 +208,7 @@ int main(int argc, char* args[]) {
         std::fill_n(board_state[i], 20, BLANK);
     }
 
-    active_coordinates[0][0] =  4;       
-    active_coordinates[0][1] =  0;       
-    active_coordinates[1][0] =  5;       
-    active_coordinates[1][1] =  0;       
-    active_coordinates[2][0] =  5;       
-    active_coordinates[2][1] =  1;       
-    active_coordinates[3][0] =  6;       
-    active_coordinates[3][1] =  1;       
-    board_state[4][17] = BLUE;
+    spawn_new_piece(distrib(gen));
 
     while (running) {
         while (SDL_PollEvent(&event)) {
