@@ -47,7 +47,7 @@ std::map<squareColor, std::tuple<int, int, int>> colorToRGB = {
     {ORANGE, {250, 156, 28}},
     {CYAN, {0, 255, 255}}
 };
-
+bool isActivePieceTheSquare = false;
 squareColor board_state[10][20]; //each element will be a color and this array will be used to render the squares to the screen
 
 int piece_starting_coordinates[7][4][2] = { //seven types of pieces, four squares per piece, 2 coordinates(x and y) each
@@ -285,8 +285,6 @@ int main(int argc, char* args[]) {
                         case SDL_SCANCODE_RIGHT:
                             if(can_active_move_horizontal(RIGHT)) {
                                 move_active_piece_horizontal(RIGHT);
-                            }else {
-                                std::cout << "No, cannot move right!" << std::endl;
                             }
                             break;
                         case SDL_SCANCODE_UP:
@@ -295,12 +293,12 @@ int main(int argc, char* args[]) {
                         case SDL_SCANCODE_LEFT:
                             if(can_active_move_horizontal(LEFT)) {
                                 move_active_piece_horizontal(LEFT);
-                            }else {
-                                std::cout << "No, cannot move left!" << std::endl;
                             }
                             break;
                         case SDL_SCANCODE_DOWN:
-                            std::cout << "Down arrow key pressed!" << std::endl;
+                            if(can_active_move_down()) {
+                                move_active_down();
+                            }
                             break;
                         default:
                             // Ignore other keys
