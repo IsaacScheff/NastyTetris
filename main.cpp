@@ -2,10 +2,8 @@
 #include <SDL3/SDL_main.h>
 #include <ctime>
 #include <map>
-#include <ostream>
 #include <tuple>
 #include <algorithm>
-#include <iostream>
 #include <random>
 
 constexpr int WINDOW_WIDTH = 422;
@@ -17,6 +15,7 @@ constexpr float GRID_Y = 350;
 constexpr int STEP_RATE_IN_MILLISECONDS = 500;
 constexpr int MAX_RND_NUM = 6; //for generating a number to choose next piece
 constexpr int STARTING_PIVOT[] = {5, 0};
+constexpr int SQUARE_IN_PIECE_ARRAY = 0;
 
 Uint32 lastTime = SDL_GetTicks();      
 Uint32 accumulator = 0;
@@ -135,6 +134,11 @@ void draw_from_board_state(SDL_Renderer* renderer) {
 
 void spawn_new_piece(int randomNumber) {
     active_color = squareColor(randomNumber);
+    if(randomNumber == SQUARE_IN_PIECE_ARRAY) {
+        isActivePieceTheSquare = true;
+    } else {
+        isActivePieceTheSquare = false;
+    }
     for(int i = 0; i < 4; i++) {
         active_coordinates[i][0] = piece_starting_coordinates[randomNumber][i][0]; 
         active_coordinates[i][1] = piece_starting_coordinates[randomNumber][i][1]; 
@@ -194,6 +198,9 @@ void check_full_rows() {
 }
 
 void rotate_active_piece() {
+    if(isActivePieceTheSquare) {
+        return;
+    }
     int temp_coordinates[4][2];
     squareColor temp_board_state[10][20];
     std::copy(&board_state[0][0], &board_state[0][0] + 10 * 20, &temp_board_state[0][0]); //copying current board state to temp
