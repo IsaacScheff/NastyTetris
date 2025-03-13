@@ -14,8 +14,9 @@ constexpr float OUTER_BLOCK_WIDTH = 20;
 constexpr float INNER_BLOCK_WIDTH = 18;
 constexpr float GRID_X = 110;
 constexpr float GRID_Y = 350; 
-constexpr int STEP_RATE_IN_MILLISECONDS = 200;
+constexpr int STEP_RATE_IN_MILLISECONDS = 500;
 constexpr int MAX_RND_NUM = 6; //for generating a number to choose next piece
+constexpr int STARTING_PIVOT[] = {5, 0};
 
 Uint32 lastTime = SDL_GetTicks();      
 Uint32 accumulator = 0;
@@ -60,6 +61,7 @@ int piece_starting_coordinates[7][4][2] = { //seven types of pieces, four square
 };
 
 int active_coordinates[4][2]; //the four places in the grid that the current active piece occupy
+int active_pivot_point[2]; //the center of the active piece
 squareColor active_color;
 
 bool is_not_active_coord(int x, int y) {
@@ -90,6 +92,7 @@ void move_active_down() {
     for(int i = 0; i < 4; i++) {
         board_state[active_coordinates[i][0]][active_coordinates[i][1]] = active_color;
     }
+    active_pivot_point[1] += 1; //pivot point Y value
 }
 
 void draw_tetris_square(SDL_Renderer* renderer, float x_cor, float y_cor, squareColor sColor) { //TODO: arg for either place in the grid or coordinates on screen to render square
@@ -136,6 +139,8 @@ void spawn_new_piece(int randomNumber) {
         active_coordinates[i][0] = piece_starting_coordinates[randomNumber][i][0]; 
         active_coordinates[i][1] = piece_starting_coordinates[randomNumber][i][1]; 
     }
+    active_pivot_point[0] = STARTING_PIVOT[0];
+    active_pivot_point[1] = STARTING_PIVOT[1];
 }
 
 bool can_active_move_horizontal(directionInput direction) {
@@ -159,6 +164,7 @@ void move_active_piece_horizontal(directionInput direction) {
     for(int i = 0; i < 4; i++) {
         board_state[active_coordinates[i][0]][active_coordinates[i][1]] = active_color;
     }
+    active_pivot_point[0] += move_direction; //pivot point x value
 }
 
 void delete_full_row(int row) {
@@ -181,11 +187,42 @@ void check_full_rows() {
             if(board_state[x][y] == BLANK) {
                 break;
             } else if (x == 9) {
-                std::cout << "Delete this row!" << std::flush;
                 delete_full_row(y);
             }
         }
     }
+}
+
+void rotate_active_piece() {
+    int temp_coordinates[4][2];
+    squareColor temp_board_state[10][20];
+    std::copy(&board_state[0][0], &board_state[0][0] + 10 * 20, &temp_board_state[0][0]); //copying current board state to temp
+    for(int i = 0; i < 4; i++) { //remove active piece from temp state
+        temp_board_state[active_coordinates[i][0]][active_coordinates[i][1]] = BLANK;
+    }
+    for(int i = 0; i < 4; i++) {
+        temp_coordinates[i][0] = active_coordinates[i][1] - active_pivot_point[1]; // temp_coordiante X value equal to current active y
+        temp_coordinates[i][1] = -1 * (active_coordinates[i][0] - active_pivot_point[0]); // temp_coordiante Y value equal to current active x * -1
+        temp_coordinates[i][0] = temp_coordinates[i][0] + active_pivot_point[0]; //now we add the pivot point back in
+        temp_coordinates[i][1] = temp_coordinates[i][1] + active_pivot_point[1];
+    }
+    for(int i = 0; i < 4; i++) {
+        if(temp_board_state[temp_coordinates[i][0]][temp_coordinates[i][1]] != BLANK || 
+                temp_coordinates[i][0] < 0 || 
+                temp_coordinates[i][0] > 9 ||
+                temp_coordinates[i][1] < 0 ||
+                temp_coordinates[i][1] > 19
+                ) {
+            return;
+        }
+    }
+    for(int i = 0; i < 4; i++) {
+        temp_board_state[temp_coordinates[i][0]][temp_coordinates[i][1]] = active_color;
+        active_coordinates[i][0] = temp_coordinates[i][0];
+        active_coordinates[i][1] = temp_coordinates[i][1];
+    }
+
+    std::copy(&temp_board_state[0][0], &temp_board_state[0][0] + 10 * 20, &board_state[0][0]); //copying temp board state to current
 }
 
 bool initialize() {
@@ -253,7 +290,7 @@ int main(int argc, char* args[]) {
                             }
                             break;
                         case SDL_SCANCODE_UP:
-                            std::cout << "Up arrow key pressed!" << std::endl;
+                            rotate_active_piece();
                             break;
                         case SDL_SCANCODE_LEFT:
                             if(can_active_move_horizontal(LEFT)) {
