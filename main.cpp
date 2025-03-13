@@ -208,8 +208,8 @@ void rotate_active_piece() {
         temp_board_state[active_coordinates[i][0]][active_coordinates[i][1]] = BLANK;
     }
     for(int i = 0; i < 4; i++) {
-        temp_coordinates[i][0] = active_coordinates[i][1] - active_pivot_point[1]; // temp_coordiante X value equal to current active y
-        temp_coordinates[i][1] = -1 * (active_coordinates[i][0] - active_pivot_point[0]); // temp_coordiante Y value equal to current active x * -1
+        temp_coordinates[i][0] = -1 * (active_coordinates[i][1] - active_pivot_point[1]); // temp_coordiante X value equal to current active y * -1
+        temp_coordinates[i][1] = active_coordinates[i][0] - active_pivot_point[0]; // temp_coordiante Y value equal to current active x 
         temp_coordinates[i][0] = temp_coordinates[i][0] + active_pivot_point[0]; //now we add the pivot point back in
         temp_coordinates[i][1] = temp_coordinates[i][1] + active_pivot_point[1];
     }
